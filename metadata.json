@@ -1,0 +1,7 @@
+{
+  "name": "United Pharmacies LMS Guide",
+  "description": "A comprehensive interactive Knowledge Base for United Pharmacies staff to master the Moodle LMS system, featuring an AI assistant.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
