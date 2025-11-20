@@ -1,3 +1,5 @@
+/* Standard CSS - Tailwind is loaded via CDN in index.html */
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

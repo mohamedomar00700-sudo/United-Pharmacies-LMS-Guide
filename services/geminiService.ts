@@ -5,6 +5,19 @@ import { GeneratedQuestion, TopicData } from "../types";
 const apiKey = process.env.API_KEY || ''; 
 const ai = new GoogleGenAI({ apiKey });
 
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 export const sendMessageToGemini = async (message: string, currentTopic?: TopicData): Promise<string> => {
   try {
     let contextPrompt = "";
@@ -32,13 +45,27 @@ export const sendMessageToGemini = async (message: string, currentTopic?: TopicD
   }
 };
 
-export const generateQuizQuestions = async (content: string): Promise<GeneratedQuestion[]> => {
+export const generateQuizQuestions = async (content: string | File): Promise<GeneratedQuestion[]> => {
   try {
+    let parts: any[] = [];
+    let prompt = "Generate 3 Multiple Choice Questions (MCQ) in Arabic based on this content. Ensure the output is strictly JSON.";
+
+    if (content instanceof File) {
+      const base64 = await fileToBase64(content);
+      parts.push({
+        inlineData: {
+          mimeType: content.type,
+          data: base64
+        }
+      });
+      parts.push({ text: prompt });
+    } else {
+      parts.push({ text: `${prompt}\n\nText: "${content}"` });
+    }
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Generate 3 Multiple Choice Questions (MCQ) in Arabic based on this text. 
-      Text: "${content}"
-      Ensure the output is strictly JSON.`,
+      contents: { parts },
       config: {
         responseMimeType: "application/json",
         responseSchema: {

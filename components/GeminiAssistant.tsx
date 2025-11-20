@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Loader2, Sparkles, Mic, BrainCircuit, MessageCircle } from 'lucide-react';
+import { X, Send, Loader2, Sparkles, Mic, BrainCircuit, MessageCircle, Paperclip, FileText, Trash2 } from 'lucide-react';
 import { ChatMessage, GeneratedQuestion, TopicData } from '../types';
 import { sendMessageToGemini, generateQuizQuestions } from '../services/geminiService';
 
@@ -22,11 +22,13 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = ({ isOpen, onClose, curr
   
   // Quiz Generator State
   const [quizInput, setQuizInput] = useState('');
+  const [quizFile, setQuizFile] = useState<File | null>(null);
   const [generatedQuiz, setGeneratedQuiz] = useState<GeneratedQuestion[]>([]);
   const [isQuizLoading, setIsQuizLoading] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll
   useEffect(() => {
@@ -58,15 +60,31 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = ({ isOpen, onClose, curr
   };
 
   const handleGenerateQuiz = async () => {
-    if (!quizInput.trim() || isQuizLoading) return;
+    if ((!quizInput.trim() && !quizFile) || isQuizLoading) return;
     setIsQuizLoading(true);
-    const questions = await generateQuizQuestions(quizInput);
+    
+    // Prioritize file if exists
+    const contentToProcess = quizFile ? quizFile : quizInput;
+    const questions = await generateQuizQuestions(contentToProcess);
+    
     setGeneratedQuiz(questions);
     setIsQuizLoading(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSendChat();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setQuizFile(e.target.files[0]);
+      setQuizInput(''); // Optional: Clear text input when file is selected to avoid confusion
+    }
+  };
+
+  const clearFile = () => {
+    setQuizFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const startListening = () => {
@@ -87,7 +105,9 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = ({ isOpen, onClose, curr
         if (activeTab === 'chat') {
           setInput(speechResult);
         } else {
-          setQuizInput(speechResult);
+          if (!quizFile) {
+            setQuizInput(speechResult);
+          }
         }
         setIsListening(false);
       };
@@ -180,24 +200,66 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = ({ isOpen, onClose, curr
           {activeTab === 'quiz' && (
             <div className="p-6 space-y-6">
                <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300">أدخل النص التعليمي:</label>
-                 <textarea 
-                    value={quizInput}
-                    onChange={(e) => setQuizInput(e.target.value)}
-                    placeholder="الصق هنا نصاً من منهج الصيدلة وسأقوم بتوليد أسئلة MCQ..."
-                    className="w-full h-32 p-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-purple-200 outline-none resize-none text-sm"
+                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300">المحتوى المصدري:</label>
+                 
+                 {/* File Upload Input (Hidden) */}
+                 <input 
+                   type="file"
+                   ref={fileInputRef}
+                   onChange={handleFileChange}
+                   className="hidden"
+                   accept=".pdf,.txt,.md,.csv"
                  />
-                 <div className="flex justify-between">
-                    <button 
-                      onClick={startListening}
-                      className={`p-2 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}
-                    >
-                      <Mic size={18} />
-                    </button>
+
+                 {quizFile ? (
+                   <div className="w-full h-32 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-3 relative group">
+                     <div className="p-3 bg-purple-50 dark:bg-purple-900/30 rounded-full">
+                       <FileText className="text-purple-600 dark:text-purple-400" size={32} />
+                     </div>
+                     <div className="text-center">
+                       <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate max-w-[200px]">{quizFile.name}</p>
+                       <p className="text-xs text-slate-400">{(quizFile.size / 1024).toFixed(1)} KB</p>
+                     </div>
+                     <button 
+                       onClick={clearFile}
+                       className="absolute top-2 right-2 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                       title="إزالة الملف"
+                     >
+                       <Trash2 size={16} />
+                     </button>
+                   </div>
+                 ) : (
+                    <textarea 
+                        value={quizInput}
+                        onChange={(e) => setQuizInput(e.target.value)}
+                        placeholder="الصق هنا نصاً من منهج الصيدلة (أو ارفع ملف PDF)..."
+                        className="w-full h-32 p-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-purple-200 outline-none resize-none text-sm transition-all"
+                    />
+                 )}
+
+                 <div className="flex justify-between pt-2">
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={startListening}
+                            disabled={!!quizFile}
+                            className={`p-2 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200'} disabled:opacity-30 disabled:cursor-not-allowed`}
+                            title="كتابة بالصوت"
+                        >
+                            <Mic size={18} />
+                        </button>
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className={`p-2 rounded-full transition-colors ${quizFile ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}
+                            title="رفع ملف"
+                        >
+                            <Paperclip size={18} />
+                        </button>
+                    </div>
+
                     <button 
                       onClick={handleGenerateQuiz}
-                      disabled={isQuizLoading || !quizInput.trim()}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50 flex items-center gap-2"
+                      disabled={isQuizLoading || (!quizInput.trim() && !quizFile)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
                     >
                       {isQuizLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                       توليد الأسئلة
