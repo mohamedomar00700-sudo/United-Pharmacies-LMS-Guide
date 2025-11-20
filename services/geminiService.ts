@@ -5,7 +5,7 @@ import { GeneratedQuestion, TopicData } from "../types";
 const apiKey = process.env.API_KEY || ''; 
 const ai = new GoogleGenAI({ apiKey });
 
-const fileToBase64 = (file: File): Promise<string> => {
+export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -18,7 +18,7 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-export const sendMessageToGemini = async (message: string, currentTopic?: TopicData): Promise<string> => {
+export const sendMessageToGemini = async (message: string, imageBase64?: string, currentTopic?: TopicData): Promise<string> => {
   try {
     let contextPrompt = "";
     if (currentTopic) {
@@ -29,9 +29,26 @@ export const sendMessageToGemini = async (message: string, currentTopic?: TopicD
       `;
     }
 
+    const parts: any[] = [];
+    
+    // If image is provided, add it to parts
+    if (imageBase64) {
+      parts.push({
+        inlineData: {
+          mimeType: 'image/jpeg', // Assuming jpeg/png mostly
+          data: imageBase64
+        }
+      });
+    }
+
+    // Add text prompt
+    parts.push({
+      text: `${contextPrompt}\n\nUser Query: ${message}`
+    });
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `${contextPrompt}\n\nUser Query: ${message}`,
+      contents: { parts },
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.3,
@@ -45,10 +62,22 @@ export const sendMessageToGemini = async (message: string, currentTopic?: TopicD
   }
 };
 
-export const generateQuizQuestions = async (content: string | File): Promise<GeneratedQuestion[]> => {
+export const generateQuizQuestions = async (
+  content: string | File, 
+  count: number = 3, 
+  type: 'mcq' | 'tf' = 'mcq'
+): Promise<GeneratedQuestion[]> => {
   try {
     let parts: any[] = [];
-    let prompt = "Generate 3 Multiple Choice Questions (MCQ) in Arabic based on this content. Ensure the output is strictly JSON.";
+    
+    let typeInstruction = "Multiple Choice Questions (MCQ) with 4 options";
+    if (type === 'tf') {
+      typeInstruction = "True/False Questions. The options array MUST be exactly ['صح', 'خطأ']";
+    }
+
+    let prompt = `Generate ${count} ${typeInstruction} in Arabic based on this content. 
+    CRITICAL: For each question, provide a short "explanation" field explaining WHY the answer is correct. 
+    Ensure the output is strictly JSON.`;
 
     if (content instanceof File) {
       const base64 = await fileToBase64(content);
@@ -78,8 +107,10 @@ export const generateQuizQuestions = async (content: string | File): Promise<Gen
                 type: Type.ARRAY,
                 items: { type: Type.STRING }
               },
-              correctAnswer: { type: Type.STRING }
-            }
+              correctAnswer: { type: Type.STRING },
+              explanation: { type: Type.STRING, description: "Explanation of why this is the correct answer" }
+            },
+            required: ["question", "options", "correctAnswer", "explanation"]
           }
         }
       }

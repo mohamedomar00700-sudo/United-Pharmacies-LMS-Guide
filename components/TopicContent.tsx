@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { TopicData, TopicId } from '../types';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { TOPICS } from '../constants';
+import { TopicId } from '../types';
+import { useGlobal } from '../context/GlobalContext';
 import { 
   CheckCircle2, 
   HelpCircle, 
@@ -8,22 +11,24 @@ import {
   FileText, 
   Presentation, 
   AlertTriangle,
-  Square,
   CheckSquare,
   Image as ImageIcon,
   X,
   ThumbsUp,
   ThumbsDown,
   Copy,
-  Check
+  Check,
+  CheckCircle
 } from 'lucide-react';
 
-interface TopicContentProps {
-  topic: TopicData;
-  onComplete: (id: TopicId) => void;
-}
+const TopicContent: React.FC = () => {
+  const { topicId } = useParams<{ topicId: string }>();
+  const [searchParams] = useSearchParams();
+  const highlightTerm = searchParams.get('search');
+  const { markTopicComplete } = useGlobal();
 
-const TopicContent: React.FC<TopicContentProps> = ({ topic, onComplete }) => {
+  const topic = TOPICS.find(t => t.id === topicId) || TOPICS[0];
+
   const [checkedSteps, setCheckedSteps] = useState<number[]>([]);
   const [showScreenshot, setShowScreenshot] = useState<string | null>(null);
   const [feedbackGiven, setFeedbackGiven] = useState<'up' | 'down' | null>(null);
@@ -44,9 +49,9 @@ const TopicContent: React.FC<TopicContentProps> = ({ topic, onComplete }) => {
   useEffect(() => {
     localStorage.setItem(`progress-${topic.id}`, JSON.stringify(checkedSteps));
     if (checkedSteps.length === topic.steps.length && topic.steps.length > 0) {
-      onComplete(topic.id);
+      markTopicComplete(topic.id);
     }
-  }, [checkedSteps, topic.id, topic.steps.length, onComplete]);
+  }, [checkedSteps, topic.id, topic.steps.length, markTopicComplete]);
 
   const toggleStep = (index: number) => {
     setCheckedSteps(prev => 
@@ -60,6 +65,26 @@ const TopicContent: React.FC<TopicContentProps> = ({ topic, onComplete }) => {
     setTimeout(() => setCopiedIndex(null), 2000);
   };
   
+  // Highlighter Utility
+  const HighlightText = ({ text }: { text: string }) => {
+    if (!highlightTerm) return <>{text}</>;
+    
+    const parts = text.split(new RegExp(`(${highlightTerm})`, 'gi'));
+    return (
+      <>
+        {parts.map((part, i) => 
+          part.toLowerCase() === highlightTerm.toLowerCase() ? (
+            <mark key={i} className="bg-yellow-200 text-slate-900 rounded-sm px-0.5 animate-pulse">
+              {part}
+            </mark>
+          ) : (
+            part
+          )
+        )}
+      </>
+    );
+  };
+
   // Helper to determine styles based on topic color
   const getColorClasses = (baseColor: string) => {
     const colors: Record<string, string> = {
@@ -101,8 +126,8 @@ const TopicContent: React.FC<TopicContentProps> = ({ topic, onComplete }) => {
               <topic.icon size={32} />
             </div>
             <div>
-              <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{topic.title}</h2>
-              <p className="text-slate-500 dark:text-slate-400 mt-1 text-lg">{topic.description}</p>
+              <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100"><HighlightText text={topic.title} /></h2>
+              <p className="text-slate-500 dark:text-slate-400 mt-1 text-lg"><HighlightText text={topic.description} /></p>
             </div>
           </div>
           <hr className="border-slate-200 dark:border-slate-700" />
@@ -177,10 +202,14 @@ const TopicContent: React.FC<TopicContentProps> = ({ topic, onComplete }) => {
                           {topic.id === TopicId.TROUBLESHOOTING ? (
                              <div className="flex items-start gap-3">
                                 <AlertTriangle className="text-amber-500 shrink-0 mt-1" size={20} />
-                                <p className={`leading-relaxed font-medium ${isChecked ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}`}>{step}</p>
+                                <p className={`leading-relaxed font-medium ${isChecked ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                                  <HighlightText text={step} />
+                                </p>
                              </div>
                           ) : (
-                            <p className={`leading-relaxed text-lg ${isChecked ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}`}>{step}</p>
+                            <p className={`leading-relaxed text-lg ${isChecked ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                               <HighlightText text={step} />
+                            </p>
                           )}
 
                           {/* View Example Button */}
@@ -221,10 +250,10 @@ const TopicContent: React.FC<TopicContentProps> = ({ topic, onComplete }) => {
                   </button>
                   <h4 className="font-bold text-blue-800 dark:text-blue-300 mb-2 text-sm md:text-base flex items-start gap-2">
                     <span className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span>
-                    {item.question}
+                    <HighlightText text={item.question} />
                   </h4>
                   <p className="text-slate-600 dark:text-slate-300 text-sm pr-4 leading-relaxed">
-                    {item.answer}
+                    <HighlightText text={item.answer} />
                   </p>
                 </div>
               ))}
@@ -247,7 +276,7 @@ const TopicContent: React.FC<TopicContentProps> = ({ topic, onComplete }) => {
                 {topic.tips.map((tip, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-black/20 p-3 rounded-lg border border-amber-100/50 dark:border-amber-800/30">
                     <div className="w-1.5 h-1.5 mt-2.5 rounded-full bg-amber-400 shrink-0"></div>
-                    <span>{tip}</span>
+                    <span><HighlightText text={tip} /></span>
                   </li>
                 ))}
               </ul>

@@ -28,12 +28,14 @@ export interface TopicData {
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
+  image?: string; // Base64 image string
 }
 
 export interface GeneratedQuestion {
   question: string;
   options: string[];
   correctAnswer: string;
+  explanation: string; // New field for educational reinforcement
 }
 
 export interface SearchResult {
