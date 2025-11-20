@@ -1,7 +1,7 @@
 import React from 'react';
 import { TOPICS } from '../constants';
 import { TopicId, ProgressMap } from '../types';
-import { ChevronLeft, CheckCircle } from 'lucide-react';
+import { ChevronLeft, CheckCircle, GraduationCap } from 'lucide-react';
 
 interface SidebarProps {
   currentTopic: TopicId;
@@ -35,13 +35,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentTopic, onSelectTopic, isOpen, 
           {/* Header */}
           <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-br from-teal-600 to-teal-800 text-white">
             <div className="flex items-center gap-3">
-              <div className="bg-white p-1.5 rounded-lg h-12 w-12 flex items-center justify-center shadow-sm shrink-0">
-                <img 
-                  src="https://www.unitedpharmacy.sa/media/logo/websites/1/United-Pharmacy-Logo-En_1_.png" 
-                  alt="United Pharmacies" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
               <div>
                 <h1 className="font-bold text-lg leading-tight">صيدليات المتحدة</h1>
                 <p className="text-xs text-teal-100 opacity-90">LMS Knowledge Base</p>

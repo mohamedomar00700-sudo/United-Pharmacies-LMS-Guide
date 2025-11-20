@@ -113,11 +113,7 @@ const App: React.FC = () => {
             >
               <Menu size={24} />
             </button>
-            <img 
-               src="https://www.unitedpharmacy.sa/media/logo/websites/1/United-Pharmacy-Logo-En_1_.png" 
-               alt="Logo" 
-               className="h-8 w-auto"
-            />
+            <span className="font-bold text-slate-800 dark:text-white text-sm">صيدليات المتحدة</span>
           </div>
 
           {/* Desktop Spacer / Title */}
