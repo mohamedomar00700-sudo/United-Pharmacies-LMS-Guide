@@ -35,6 +35,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentTopic, onSelectTopic, isOpen, 
           {/* Header */}
           <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-br from-teal-600 to-teal-800 text-white">
             <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <GraduationCap size={24} className="text-white" />
+              </div>
               <div>
                 <h1 className="font-bold text-lg leading-tight">صيدليات المتحدة</h1>
                 <p className="text-xs text-teal-100 opacity-90">LMS Knowledge Base</p>
