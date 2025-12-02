@@ -28,12 +28,20 @@ export interface TopicData {
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
+<<<<<<< HEAD
+=======
+  image?: string; // Base64 image string
+>>>>>>> 650212b28125bfaa8c3ba1f6db45eae4d9555322
 }
 
 export interface GeneratedQuestion {
   question: string;
   options: string[];
   correctAnswer: string;
+<<<<<<< HEAD
+=======
+  explanation: string; // New field for educational reinforcement
+>>>>>>> 650212b28125bfaa8c3ba1f6db45eae4d9555322
 }
 
 export interface SearchResult {

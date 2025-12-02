@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -21,3 +22,15 @@ export default defineConfig(({ mode }) => {
       }
     };
 });
+=======
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  base: './', // Important for GitHub Pages deployment
+  define: {
+    'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
+  },
+});
+>>>>>>> 650212b28125bfaa8c3ba1f6db45eae4d9555322
